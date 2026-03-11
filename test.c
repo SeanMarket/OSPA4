@@ -5,8 +5,13 @@
 array arr;
 sem_t mutex;
 
-void produce(){
+int i = 0;
 
+void produce(){
+    array_put(&arr, i, &mutex);
+    sem_wait(&mutex);
+        i++;
+    sem_post(&mutex);
 }
 
 void consume(){

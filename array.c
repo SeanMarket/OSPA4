@@ -2,7 +2,7 @@
 
 bool array_isFull(array *s, sem_t *mutex){
     sem_wait(mutex);
-    if(s->back + 1 % ARR_SIZE == s->front){ //have to lock because of s->back + 1 comp?
+    if((s->back + 1) % ARR_SIZE == s->front){ //have to lock because of s->back + 1 comp?
         sem_post(mutex);
         return true;
     }
@@ -53,7 +53,7 @@ int array_get(array *s, char **hostname, sem_t *mutex){
 
     sem_wait(mutex);
 
-    hostname = s->arr[s->front];
+    *hostname = s->arr[s->front];
 
     if(s->front == s->back){
         s->front = s->back = -1;
@@ -69,6 +69,6 @@ void array_free(array *s){
     for(int i = 0; i < ARR_SIZE; i++){
         s->arr[i] = NULL;
     }
-    s->front == -1;
-    s->back == -1;
+    s->front = -1;
+    s->back = -1;
 }
