@@ -31,7 +31,7 @@ int array_init(array *s){
 
 int array_put(array *s, char *hostname, sem_t *mutex){
     if(array_isFull(s, mutex)){
-        printf("Cannot put. Array is full\n");
+       // printf("Cannot put. Array is full\n");
         return -1;
     }
     else if(array_isEmpty(s, mutex)){
@@ -47,7 +47,7 @@ int array_put(array *s, char *hostname, sem_t *mutex){
 
 int array_get(array *s, char **hostname, sem_t *mutex){
     if(array_isEmpty(s, mutex)){
-        printf("Cannot get. Array is empty\n");
+       // printf("Cannot get. Array is empty\n");
         return -1;
     }
 
