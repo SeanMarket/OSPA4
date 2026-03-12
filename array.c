@@ -1,22 +1,22 @@
 #include "array.h"
 
-bool array_isFull(array *s, sem_t *mutex){
-    sem_wait(mutex);
+bool array_isFull(array *s){
+    sem_wait(&(s->mutex));
     if((s->back + 1) % ARR_SIZE == s->front){ //have to lock because of s->back + 1 comp?
-        sem_post(mutex);
+        sem_post(&(s->mutex));
         return true;
     }
-    sem_post(mutex);
+    sem_post(&(s->mutex));
     return false;
 }
 
-bool array_isEmpty(array *s, sem_t *mutex){
-    sem_wait(mutex);
+bool array_isEmpty(array *s){
+    sem_wait(&(s->mutex));
     if((s->front == -1) && (s->back == -1)){
-        sem_post(mutex);
+        sem_post(&(s->mutex));
         return true;
     }
-    sem_post(mutex);
+    sem_post(&(s->mutex));
     return false;
 }
 
@@ -26,32 +26,34 @@ int array_init(array *s){
     for (int i = 0; i < ARR_SIZE; i++){
         s->arr[i] = NULL;
     }
+
+    sem_init(&(s->mutex), 0, 1);
     return 0;
 }
 
-int array_put(array *s, char *hostname, sem_t *mutex){
-    if(array_isFull(s, mutex)){
+int array_put(array *s, char *hostname){
+    if(array_isFull(s)){
        // printf("Cannot put. Array is full\n");
         return -1;
     }
-    else if(array_isEmpty(s, mutex)){
-        sem_wait(mutex);
+    else if(array_isEmpty(s)){
+        sem_wait(&(s->mutex));
         s->front++;
     }
 
     s->back = (s->back + 1) % ARR_SIZE;
     s->arr[s->back] = hostname;
-    sem_post(mutex);
+    sem_post(&(s->mutex));
     return 0;
 }
 
-int array_get(array *s, char **hostname, sem_t *mutex){
-    if(array_isEmpty(s, mutex)){
+int array_get(array *s, char **hostname){
+    if(array_isEmpty(s)){
        // printf("Cannot get. Array is empty\n");
         return -1;
     }
 
-    sem_wait(mutex);
+    sem_wait(&(s->mutex));
 
     *hostname = s->arr[s->front];
 
@@ -61,7 +63,7 @@ int array_get(array *s, char **hostname, sem_t *mutex){
     else{
         s->front = (s->front + 1) % ARR_SIZE;
     }
-    sem_post(mutex);
+    sem_post(&(s->mutex));
     return 0;
 }
 
@@ -71,4 +73,5 @@ void array_free(array *s){
     }
     s->front = -1;
     s->back = -1;
+    sem_destroy(&(s->mutex));
 }

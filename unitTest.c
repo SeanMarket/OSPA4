@@ -41,79 +41,69 @@ void test_array_init() {
 void test_array_isEmpty_initial() {
     TEST_START("test_array_isEmpty_initial");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
-    bool empty = array_isEmpty(&s, &mutex);
+    bool empty = array_isEmpty(&s);
     
     TEST_ASSERT(empty == true, "newly initialized array is empty");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 3: isFull on new array
 void test_array_isFull_initial() {
     TEST_START("test_array_isFull_initial");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
-    bool full = array_isFull(&s, &mutex);
+    bool full = array_isFull(&s);
     
     TEST_ASSERT(full == false, "newly initialized array is not full");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 4: Single put operation
 void test_array_put_single() {
     TEST_START("test_array_put_single");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     char *test_str = "test1";
-    int result = array_put(&s, test_str, &mutex);
+    int result = array_put(&s, test_str);
     
     TEST_ASSERT(result == 0, "array_put returns 0 on success");
     TEST_ASSERT(s.front == 0, "front is 0 after first put");
     TEST_ASSERT(s.back == 0, "back is 0 after first put");
     TEST_ASSERT(s.arr[0] == test_str, "element stored at correct position");
-    TEST_ASSERT(array_isEmpty(&s, &mutex) == false, "array is not empty after put");
+    TEST_ASSERT(array_isEmpty(&s) == false, "array is not empty after put");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 5: Multiple put operations
 void test_array_put_multiple() {
     TEST_START("test_array_put_multiple");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     char *strings[] = {"str1", "str2", "str3", "str4"};
     
     for (int i = 0; i < 4; i++) {
-        int result = array_put(&s, strings[i], &mutex);
+        int result = array_put(&s, strings[i]);
         TEST_ASSERT(result == 0, "array_put succeeds for multiple elements");
     }
     
     TEST_ASSERT(s.front == 0, "front is still 0");
     TEST_ASSERT(s.back == 3, "back is at position 3");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 6: Fill array to capacity
 void test_array_fill_to_capacity() {
     TEST_START("test_array_fill_to_capacity");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     char *strings[ARR_SIZE];
@@ -122,97 +112,89 @@ void test_array_fill_to_capacity() {
     for (int i = 0; i < ARR_SIZE; i++) {
         strings[i] = (char*)malloc(20);
         sprintf(strings[i], "element_%d", i);
-        int result = array_put(&s, strings[i], &mutex);
+        int result = array_put(&s, strings[i]);
         TEST_ASSERT(result == 0, "able to add element to array");
     }
     
-    bool full = array_isFull(&s, &mutex);
+    bool full = array_isFull(&s);
     TEST_ASSERT(full == true, "array reports full when at capacity");
     
     // Try to add one more - should fail
     char *extra = "extra";
-    int result = array_put(&s, extra, &mutex);
+    int result = array_put(&s, extra);
     TEST_ASSERT(result == -1, "array_put returns -1 when full");
     
     // Cleanup
     for (int i = 0; i < ARR_SIZE; i++) {
         free(strings[i]);
     }
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 7: Single get operation
 void test_array_get_single() {
     TEST_START("test_array_get_single");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     char *test_str = "test_get";
-    array_put(&s, test_str, &mutex);
+    array_put(&s, test_str);
     
     char *retrieved = NULL;
-    int result = array_get(&s, &retrieved, &mutex);
+    int result = array_get(&s, &retrieved);
     
     TEST_ASSERT(result == 0, "array_get returns 0 on success");
     TEST_ASSERT(s.front == -1, "front reset to -1 after getting last element");
     TEST_ASSERT(s.back == -1, "back reset to -1 after getting last element");
-    TEST_ASSERT(array_isEmpty(&s, &mutex) == true, "array is empty after getting only element");
+    TEST_ASSERT(array_isEmpty(&s) == true, "array is empty after getting only element");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 8: Get from empty array
 void test_array_get_empty() {
     TEST_START("test_array_get_empty");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     char *retrieved = NULL;
-    int result = array_get(&s, &retrieved, &mutex);
+    int result = array_get(&s, &retrieved);
     
     TEST_ASSERT(result == -1, "array_get returns -1 when empty");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 9: Multiple put and get operations (FIFO behavior)
 void test_array_fifo() {
     TEST_START("test_array_fifo");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     char *strings[] = {"first", "second", "third"};
     
     // Add three elements
     for (int i = 0; i < 3; i++) {
-        array_put(&s, strings[i], &mutex);
+        array_put(&s, strings[i]);
     }
     
     // Get them back and verify FIFO order
     for (int i = 0; i < 3; i++) {
         char *retrieved = NULL;
-        array_get(&s, &retrieved, &mutex);
+        array_get(&s, &retrieved);
         // Note: the current implementation has a bug - it doesn't assign properly
         // This test documents expected behavior
     }
     
-    TEST_ASSERT(array_isEmpty(&s, &mutex) == true, "array is empty after all gets");
+    TEST_ASSERT(array_isEmpty(&s) == true, "array is empty after all gets");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 10: Circular wrapping
 void test_array_circular_wrapping() {
     TEST_START("test_array_circular_wrapping");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     
@@ -220,35 +202,33 @@ void test_array_circular_wrapping() {
     for (int i = 0; i < ARR_SIZE; i++) {
         char *str = (char*)malloc(20);
         sprintf(str, "item_%d", i);
-        array_put(&s, str, &mutex);
+        array_put(&s, str);
     }
     
     // Remove a few elements
     for (int i = 0; i < 3; i++) {
         char *retrieved = NULL;
-        array_get(&s, &retrieved, &mutex);
+        array_get(&s, &retrieved);
     }
     
     // Add more elements (should wrap around)
     for (int i = 0; i < 3; i++) {
         char *str = (char*)malloc(20);
         sprintf(str, "wrap_%d", i);
-        int result = array_put(&s, str, &mutex);
+        int result = array_put(&s, str);
         TEST_ASSERT(result == 0, "able to add elements after wrapping");
     }
     
     TEST_ASSERT(s.back < s.front || s.back == ARR_SIZE - 1 || s.back < 3, 
                 "back index wraps around correctly");
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Test 11: array_free
 void test_array_free() {
     TEST_START("test_array_free");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     
@@ -256,7 +236,7 @@ void test_array_free() {
     for (int i = 0; i < 3; i++) {
         char *str = (char*)malloc(20);
         sprintf(str, "free_test_%d", i);
-        array_put(&s, str, &mutex);
+        array_put(&s, str);
     }
     
     array_free(&s);
@@ -265,16 +245,12 @@ void test_array_free() {
     for (int i = 0; i < ARR_SIZE; i++) {
         TEST_ASSERT(s.arr[i] == NULL, "array elements set to NULL");
     }
-    
-    sem_destroy(&mutex);
 }
 
 // Test 12: Alternating put and get
 void test_array_alternating_ops() {
     TEST_START("test_array_alternating_ops");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     
     array_init(&s);
     
@@ -282,17 +258,17 @@ void test_array_alternating_ops() {
         char *str = (char*)malloc(20);
         sprintf(str, "alternate_%d", i);
         
-        int put_result = array_put(&s, str, &mutex);
+        int put_result = array_put(&s, str);
         TEST_ASSERT(put_result == 0, "put succeeds");
         
         char *retrieved = NULL;
-        int get_result = array_get(&s, &retrieved, &mutex);
+        int get_result = array_get(&s, &retrieved);
         TEST_ASSERT(get_result == 0, "get succeeds");
         
-        TEST_ASSERT(array_isEmpty(&s, &mutex) == true, "array empty after matched put/get");
+        TEST_ASSERT(array_isEmpty(&s) == true, "array empty after matched put/get");
     }
     
-    sem_destroy(&mutex);
+    array_free(&s);
 }
 
 // Enhanced multithreaded test with race condition detection
@@ -317,7 +293,6 @@ sem_t tracker_mutex;
 
 typedef struct {
     array *arr;
-    sem_t *mutex;
     int thread_id;
     int items_produced;
     int items_consumed;
@@ -352,7 +327,7 @@ void* producer_thread_tracked(void* arg) {
         usleep(rand() % 5000);
         
         // Keep trying until successful
-        while (array_put(data->arr, item, data->mutex) != 0) {
+        while (array_put(data->arr, item) != 0) {
             usleep(1000);
         }
         
@@ -375,7 +350,7 @@ void* consumer_thread_tracked(void* arg) {
         usleep(rand() % 5000);
         
         // Keep trying until successful
-        while (array_get(data->arr, &item, data->mutex) != 0) {
+        while (array_get(data->arr, &item) != 0) {
             usleep(1000);
         }
         
@@ -404,8 +379,6 @@ void* consumer_thread_tracked(void* arg) {
 void test_array_multithreaded() {
     TEST_START("test_array_multithreaded - Race Condition Detection");
     array s;
-    sem_t mutex;
-    sem_init(&mutex, 0, 1);
     array_init(&s);
     init_tracker();
     
@@ -419,7 +392,6 @@ void test_array_multithreaded() {
     // Create producers
     for (int i = 0; i < NUM_PRODUCERS; i++) {
         producer_data[i].arr = &s;
-        producer_data[i].mutex = &mutex;
         producer_data[i].thread_id = i;
         producer_data[i].items_produced = 0;
         producer_data[i].items_consumed = 0;
@@ -429,7 +401,6 @@ void test_array_multithreaded() {
     // Create consumers
     for (int i = 0; i < NUM_CONSUMERS; i++) {
         consumer_data[i].arr = &s;
-        consumer_data[i].mutex = &mutex;
         consumer_data[i].thread_id = i;
         consumer_data[i].items_produced = 0;
         consumer_data[i].items_consumed = 0;
@@ -500,14 +471,14 @@ void test_array_multithreaded() {
     TEST_ASSERT(phantom_items == 0, "no phantom items (consumed but not produced)");
     
     // Verify queue is empty
-    TEST_ASSERT(array_isEmpty(&s, &mutex) == true, 
+    TEST_ASSERT(array_isEmpty(&s) == true, 
                 "array is empty after all operations");
     
     // Verify indices are valid
     TEST_ASSERT(s.front == -1 && s.back == -1, 
                 "front and back indices properly reset");
     
-    sem_destroy(&mutex);
+    array_free(&s);
     sem_destroy(&tracker_mutex);
 }
 

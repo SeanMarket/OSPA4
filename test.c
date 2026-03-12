@@ -19,7 +19,6 @@ typedef struct{
 
 typedef struct{
     array *arr;
-    sem_t *mutex;
     int thread_id;
     int produced;
     int consumed;
@@ -57,7 +56,7 @@ void* produce(void* arg){
         item_tracker[data->thread_id][i].produced = true;
         sem_post(&test_mutex);
 
-        while(array_put(data->arr, item, data->mutex) != 0){ //keep trying until successful
+        while(array_put(data->arr, item) != 0){ //keep trying until successful
             usleep(100);
         }
 
@@ -75,7 +74,7 @@ void* consume(void* arg){
     for(int i = 0; i < ITEMS_PER_PRODUCER; i++){
         char* item = NULL;
 
-        while(array_get(data->arr, &item, data->mutex) != 0){
+        while(array_get(data->arr, &item) != 0){
             usleep(1000);
         }
 
@@ -100,9 +99,7 @@ int main(){
     printf("Testing multithreaded\n");
 
     array s;
-    sem_t mutex;
 
-    sem_init(&mutex, 0, 1);
     array_init(&s);
     init_tracker();
 
@@ -115,7 +112,6 @@ int main(){
 
     for(int i = 0; i < NUM_PRODUCERS; i++){
         producer_data[i].arr = &s;
-        producer_data[i].mutex = &mutex;
         producer_data[i].thread_id = i;
         producer_data[i].produced = 0;
         producer_data[i].consumed = 0;
@@ -124,7 +120,6 @@ int main(){
 
     for (int i = 0; i < NUM_CONSUMERS; i++) {
         consumer_data[i].arr = &s;
-        consumer_data[i].mutex = &mutex;
         consumer_data[i].thread_id = i;
         consumer_data[i].produced = 0;
         consumer_data[i].consumed = 0;
@@ -202,6 +197,6 @@ int main(){
     }
 
 
-    sem_destroy(&mutex);
+    array_free(&s);
     sem_destroy(&test_mutex);
 }
